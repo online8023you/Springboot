@@ -3,7 +3,7 @@ spring:
         active: a
     datasource:
         driver-class-name: com.mysql.cj.jdbc.Driver
-        url: jdbc:mysql://localhost:3306/userinfo?serverTimezone=Asia/Shanghai
+        url: jdbc:mysql://localhost:3306/authority?serverTimezone=Asia/Shanghai
         username: root
         password: root
     thymeleaf:
@@ -27,6 +27,8 @@ spring:
     redis:
         host: localhost
         port: 6379
+    aop:
+        auto: true
 logging:
     config: classpath:logback-spring.xml
     file: myLog.log

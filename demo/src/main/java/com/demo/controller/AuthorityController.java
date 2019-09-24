@@ -1,6 +1,9 @@
 package com.demo.controller;
 
+import com.alibaba.excel.EasyExcel;
+import com.demo.aop.SysLogPoint;
 import com.demo.entity.Authority;
+import com.demo.excelListener.AuthorityExcelListener;
 import com.demo.service.AuthorityService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -10,7 +13,12 @@ import org.apache.shiro.authz.annotation.RequiresPermissions;
 import org.apache.shiro.authz.annotation.RequiresRoles;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 @Api(tags = "权限管理")
@@ -33,39 +41,42 @@ public class AuthorityController {
 
     }*/
 
-   /* @RequiresPermissions("/authority/delete")*/
+    /* @RequiresPermissions("/authority/delete")*/
     /*@ApiOperation("根据id删除权限")
     @DeleteMapping(value = "/authority/{id}")
     public void deleteAuthorityById(@ApiParam(required = true,name = "id",value = "要删除的权限id")@PathVariable("id") Integer id) {
         authorityService.deleteAuthorityById(id);
     }*/
 
-    @RequiresPermissions(value = {"/authority/update","/menu_authority","/menu"},logical = Logical.OR)
+    @SysLogPoint(actionName = "根据id修改权限")
+    @RequiresPermissions(value = {"/authority/update", "/menu_authority", "/menu"}, logical = Logical.OR)
     @ApiOperation("根据id修改权限")
     @PutMapping(value = "/authority/{id}")
-    public Authority updateAuthorityById(@ApiParam(required = true,name = "id",value = "要修改的权限id")@PathVariable("id") Integer id,
-                                         @ApiParam(required = true,name = "authority_name",value = "权限名")@RequestParam("authority_name") String authority_name,
-                                         @ApiParam(required = true,name = "url",value = "请求路径")@RequestParam("url") String url,
-                                         @ApiParam(required = true,name = "code",value = "编码")@RequestParam("code") String code,
-                                         @ApiParam(required = true,name = "status",value = "状态") @RequestParam("status") Integer status,
-                                         @ApiParam(required = true,name = "parent_authority_id",value = "父级权限id，无父级则为0")@RequestParam("parent_authority_id") Integer parent_authority_id) {
+    public Authority updateAuthorityById(@ApiParam(required = true, name = "id", value = "要修改的权限id") @PathVariable("id") Integer id,
+                                         @ApiParam(required = true, name = "authority_name", value = "权限名") @RequestParam("authority_name") String authority_name,
+                                         @ApiParam(required = true, name = "url", value = "请求路径") @RequestParam("url") String url,
+                                         @ApiParam(required = true, name = "code", value = "编码") @RequestParam("code") String code,
+                                         @ApiParam(required = true, name = "status", value = "状态") @RequestParam("status") Integer status,
+                                         @ApiParam(required = true, name = "parent_authority_id", value = "父级权限id，无父级则为0") @RequestParam("parent_authority_id") Integer parent_authority_id) {
         return authorityService.updateAuthorityById(id, authority_name, url, code, status, parent_authority_id);
 
     }
 
+    @SysLogPoint(actionName = "查询所有权限")
     /*@RequiresPermissions("/authority/find")*/
-    @RequiresPermissions(value = {"/authority/find","/menu_authority","/menu"},logical = Logical.OR)
+    @RequiresPermissions(value = {"/authority/find", "/menu_authority", "/menu"}, logical = Logical.OR)
     @ApiOperation("查询所有权限")
     @GetMapping(value = "/authority")
-    public List<Authority> findAllAuthority() {
-        return authorityService.findAllAuthority();
+    public List<Authority> findAllAuthorities() {
+        return authorityService.findAllAuthorities();
     }
 
+    @SysLogPoint(actionName = "根据id查询权限")
     /*@RequiresPermissions("/authority/find")*/
-    @RequiresPermissions(value = {"/authority/find","/menu_authority","/menu"},logical = Logical.OR)
+    @RequiresPermissions(value = {"/authority/find", "/menu_authority", "/menu"}, logical = Logical.OR)
     @ApiOperation("根据id查询权限")
     @GetMapping(value = "/authority/{id}")
-    public Authority findAuthorityById(@ApiParam(required = true,name = "id",value = "权限id")@PathVariable("id") Integer id) {
+    public Authority findAuthorityById(@ApiParam(required = true, name = "id", value = "权限id") @PathVariable("id") Integer id) {
         return authorityService.findAuthorityById(id);
     }
 
@@ -81,4 +92,19 @@ public class AuthorityController {
         return authorityService.findChildAuthorityByAuthorityId(authority_id);
     }*/
 
+    @SysLogPoint(actionName = "权限信息导出")
+    @RequiresPermissions(value = {"/authority/find", "/menu_authority", "/menu"}, logical = Logical.OR)
+    @ApiOperation("权限信息导出")
+    @GetMapping(value = "/writeAuthorityExcel")
+    public void writeAuthoritiesExcel(HttpServletResponse response) throws IOException {
+        authorityService.writeAuthoritiesExcel(response);
+    }
+
+    @SysLogPoint(actionName = "权限信息导入")
+   /* @RequiresPermissions(value = {"/authority/find", "/menu_authority", "/menu"}, logical = Logical.OR)*/
+    @ApiOperation("权限信息导入")
+    @GetMapping(value = "/readAuthorityExcel")
+    public List<Authority> readAuthoritiesExcel(@ApiParam(required = true, name = "fileName", value = "文件名") @RequestParam("fileName") MultipartFile fileName) throws IOException {
+        return authorityService.readAuthorityExcel(fileName);
+    }
 }

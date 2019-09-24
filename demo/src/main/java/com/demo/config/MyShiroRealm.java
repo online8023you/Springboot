@@ -62,7 +62,10 @@ public class MyShiroRealm extends AuthorizingRealm {
             throw new UnknownAccountException("用户名不正确");
         }else if (!user.getPassword().equals(new String((char[])token.getCredentials()))){
             throw new IncorrectCredentialsException("密码不正确");
+        }else if (!user.getStatus().equals(1)){
+            throw new LockedAccountException("帐号被锁定");
         }
+
 
         return new SimpleAuthenticationInfo(token.getPrincipal(),user.getPassword(),getName());
     }

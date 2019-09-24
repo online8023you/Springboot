@@ -19,8 +19,12 @@ public interface AuthorityRepository extends JpaRepository<Authority, Integer> {
     List<Authority> findAuthoritiesByParentId(@Param("parent_authority_id")Integer parent_authority_id);
 
     @Query(value = "SELECT * FROM t_authority WHERE parent_authority_id IS NULL",nativeQuery = true)
-    List<Authority> findAllAuthority();
+    List<Authority> findAllAuthorities();
 
     @Query(value = "SELECT b.url FROM t_role a,t_authority b,t_role_authority c WHERE a.id = c.role_id AND c.authority_id = b.id AND a.id= :role_id ",nativeQuery = true)
     List<String> findAuthoritiesUrlByRoleId(@Param("role_id")Integer role_id);
+
+   /* @Query(value = "SELECT a.id,a.authority_name,a.code,a.creat_time,a.status,a.update_time,a.url,a.parent_authorityid,parent_authority_id FROM t_authority",nativeQuery = true)
+    List<Authority> findAuthoritiesExcel();*/
+
 }

@@ -1,17 +1,21 @@
 package com.demo.service;
 
+import com.alibaba.excel.EasyExcel;
 import com.demo.dao.AuthorityRepository;
 import com.demo.dao.RoleRepository;
 import com.demo.entity.Authority;
 import com.demo.entity.Role;
+import com.demo.excelListener.RoleExcelListener;
+import io.swagger.models.auth.In;
 import org.apache.commons.lang.ObjectUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 
 @Service
 public class RoleServiceImpl implements RoleService {
@@ -195,6 +199,99 @@ public class RoleServiceImpl implements RoleService {
             }
 
         }
+    }
+
+    /*导入*/
+    @Override
+    public List<Role> readRoleExcel(MultipartFile filePath) throws IOException {
+        RoleExcelListener roleExcelListener = new RoleExcelListener();
+        EasyExcel.read(filePath.getInputStream(), Role.class, roleExcelListener).sheet().doRead();
+        List<Role> roles = roleExcelListener.getRows();
+        for (Role role : roles
+        ) {
+            String[] authority_idStrArr = role.getAuthority_ids().split(" ");
+            List<String> authority_idStrList = Arrays.asList(authority_idStrArr);
+            List<Integer> authority_idList = new ArrayList<>();
+            for (String authority_id : authority_idStrList
+            ) {
+                authority_idList.add(Integer.parseInt(authority_id));
+            }
+            if (role.getParent_roleid() == null) {
+                insertRoleExcel(role.getId(), role.getRole_name(), role.getCreat_time(), role.getUpdate_time(),
+                        0, authority_idList, role.getStatus());
+            } else {
+                insertRoleExcel(role.getId(), role.getRole_name(), role.getCreat_time(), role.getUpdate_time(),
+                        role.getParent_roleid(), authority_idList, role.getStatus());
+            }
+        }
+        return roles;
+    }
+
+    /*导出*/
+    @Override
+    public void writeRoleExcel(HttpServletResponse response) throws IOException {
+        List<Role> roles = roleRepository.findAll();
+        List<Role> roleList = new ArrayList<>();
+        for (Role role : roles
+        ) {
+            Role roleExcel = new Role();
+            if (role.getParent_role() == null) {
+                roleExcel.setParent_roleid(null);
+            } else {
+                roleExcel.setParent_roleid(role.getParent_role().getId());
+            }
+            roleExcel.setId(role.getId());
+            roleExcel.setCreat_time(role.getCreat_time());
+            roleExcel.setRole_name(role.getRole_name());
+            roleExcel.setStatus(role.getStatus());
+            roleExcel.setUpdate_time(role.getUpdate_time());
+            String authority_ids = "";
+            for (Authority authority : role.getAuthorityList()
+            ) {
+                authority_ids = authority_ids + " " + authority.getId();
+            }
+            roleExcel.setAuthority_ids(authority_ids);
+            roleList.add(roleExcel);
+        }
+        response.setContentType("application/vnd.ms-excel");
+        response.setCharacterEncoding("utf-8");
+        response.setHeader("Content-disposition", "attachment;filename=role.xlsx");
+        EasyExcel.write(response.getOutputStream(), Role.class).sheet("role").doWrite(roleList);
+    }
+
+    @Override
+    public Role insertRoleExcel(Integer id, String role_name, Date create_time, Date update_time, Integer parent_role_id,
+                                List<Integer> authority_ids, Integer status) {
+        Role role = new Role();
+        if (id != null) {
+            role.setId(id);
+        }
+        role.setRole_name(role_name);
+        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+        if (create_time == null) {
+            role.setCreat_time(timestamp);
+        } else {
+            role.setCreat_time(create_time);
+        }
+        if (update_time == null) {
+            role.setUpdate_time(timestamp);
+        } else {
+            role.setUpdate_time(update_time);
+        }
+        role.setStatus(status);
+        List<Authority> authorities = new ArrayList<>();
+        for (Integer authority_id : authority_ids
+        ) {
+            Authority authority = authorityRepository.findById(authority_id).orElse(null);
+            authorities.add(authority);
+        }
+        role.setAuthorityList(authorities);
+        if (!parent_role_id.equals(0)) {
+            Role parent_role = roleRepository.findById(parent_role_id).orElse(null);
+            role.setParent_role(parent_role);
+        }
+
+        return roleRepository.save(role);
     }
 
 
